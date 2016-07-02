@@ -1,0 +1,47 @@
+#compdef gi
+
+
+zstyle -T ':completion:*:*:gi:*' tag-order && \
+    zstyle ':completion:*:*:gi:*' tag-order 'common-commands'
+
+zstyle -s ":completion:*:*:gi:*" script script
+
+__gi_restore_comp() {
+    CURRENT=$1
+    words=("${2[@]}")
+}
+
+_gi() {
+    local old_current=${CURRENT}
+    local old_words=("${words[@]}")
+
+    local is_empty_cword=False
+
+    if [[ -z "${words[${CURRENT}]}" ]]; then
+        is_empty_cword=True
+    fi
+
+    local helper_cli="${words} --gi-bash-completion-helper-with-comp-cword=$(( ${CURRENT} - 1 )),${is_empty_cword}"
+
+    local helper_output=()    
+    while IFS= read -r line; do
+        helper_output+=( "$line" )
+    done < <( $(echo ${helper_cli}) )
+
+    CURRENT=$(( ${helper_output[2]} + 1 ))
+    words=("${helper_output[@]:2}")
+
+    service=git
+    
+    if [[ ${helper_output[1]} == True ]] && [[ $CURRENT -lt $#words ]]; then
+        __gi_restore_comp old_current old_words
+        return 0
+    fi
+    _git
+    __gi_restore_comp old_current old_words
+    return 0
+}
+
+
+_gi
+
